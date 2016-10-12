@@ -18,6 +18,8 @@ public class PanelFader : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		fadePanelImage.CrossFadeAlpha (0f, fadeInTime, false);
+
+		// alternatively use Time.deltaTime/fadeInTime
 	}
 	
 	void Update() {
