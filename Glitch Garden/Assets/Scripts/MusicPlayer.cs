@@ -29,11 +29,12 @@ public class MusicPlayer : MonoBehaviour {
 		// Register the music player as a delegate for the scenemanager
 		SceneManager.sceneLoaded += OnSceneLoad;
 
+		// play the splash screen sound - with the defalt volume
 		PlayMusicClip (musicLibrary[0], false);
 	}
 
 	void OnSceneLoad(Scene scene, LoadSceneMode mode) {
-		PlayMusicClip (musicLibrary[scene.buildIndex], true);
+		PlayMusicClip (musicLibrary[scene.buildIndex], true, PlayerPrefsManager.GetMasterVolume());
 	}
 		
 	public void PlayMusicClip(AudioClip clip, bool looping = false, float volume = 0.25f) {
@@ -49,5 +50,13 @@ public class MusicPlayer : MonoBehaviour {
 		}
 	}
 
+	// Volumecontrol
+	public void SetVolume(string src, float volume) {
+		if (src.Equals(Constants.MUSIC_AUDIOSRC_NAME)) {
+			musicSource.volume = volume;
+		} else if (src.Equals(Constants.EFFECTS_AUDIOSRC_NAME)) {
+			effectsSource.volume = volume;
+		}
+	}
 	// Scene Management delegate code
 }
