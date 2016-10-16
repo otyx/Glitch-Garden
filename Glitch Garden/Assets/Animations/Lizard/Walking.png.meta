@@ -1,34 +1,25 @@
 fileFormatVersion: 2
-guid: c9a0a7fc04483a0428461942a4e959af
-timeCreated: 1476358207
+guid: 21669240088a9f04b8cc817a7ec20824
+timeCreated: 1476608695
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
-    21300000: appearing_0
-    21300002: appearing_1
-    21300004: appearing_2
-    21300006: appearing_3
-    21300008: appearing_4
-    21300010: appearing_5
-    21300012: appearing_6
-    21300014: appearing_7
-    21300016: appearing_8
-    21300018: appearing_9
-    21300020: appearing_10
-    21300022: appearing_11
-    21300024: appearing_12
-    21300026: appearing_13
-    21300028: appearing_14
-    21300030: appearing_15
-    21300032: appearing_16
-    21300034: appearing_17
-    21300036: appearing_18
-    21300038: appearing_19
-    21300040: appearing_20
-    21300042: appearing_21
-    21300044: appearing_22
-    21300046: appearing_23
-    21300048: appearing_24
+    21300000: walking_0
+    21300002: walking_1
+    21300004: walking_2
+    21300006: walking_3
+    21300008: walking_4
+    21300010: walking_5
+    21300012: walking_6
+    21300014: walking_7
+    21300016: walking_8
+    21300018: walking_9
+    21300020: walking_10
+    21300022: walking_11
+    21300024: walking_12
+    21300026: walking_13
+    21300028: walking_14
+    21300030: walking_15
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0
@@ -69,7 +60,7 @@ TextureImporter:
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 133.33333
   alphaIsTransparency: 1
   spriteTessellationDetail: -1
   textureType: 8
@@ -78,124 +69,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: appearing_0
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 1488
-        width: 251
-        height: 186
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: appearing_1
-      rect:
-        serializedVersion: 2
-        x: 251
-        y: 1488
-        width: 251
-        height: 186
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: appearing_2
-      rect:
-        serializedVersion: 2
-        x: 502
-        y: 1488
-        width: 251
-        height: 186
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: appearing_3
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 1302
-        width: 251
-        height: 186
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: appearing_4
-      rect:
-        serializedVersion: 2
-        x: 251
-        y: 1302
-        width: 251
-        height: 186
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: appearing_5
-      rect:
-        serializedVersion: 2
-        x: 502
-        y: 1302
-        width: 251
-        height: 186
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: appearing_6
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 1116
-        width: 251
-        height: 186
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: appearing_7
-      rect:
-        serializedVersion: 2
-        x: 251
-        y: 1116
-        width: 251
-        height: 186
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: appearing_8
-      rect:
-        serializedVersion: 2
-        x: 502
-        y: 1116
-        width: 251
-        height: 186
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      tessellationDetail: 0
-    - serializedVersion: 2
-      name: appearing_9
+      name: walking_0
       rect:
         serializedVersion: 2
         x: 0
@@ -208,7 +82,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_10
+      name: walking_1
       rect:
         serializedVersion: 2
         x: 251
@@ -221,7 +95,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_11
+      name: walking_2
       rect:
         serializedVersion: 2
         x: 502
@@ -234,7 +108,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_12
+      name: walking_3
       rect:
         serializedVersion: 2
         x: 0
@@ -247,7 +121,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_13
+      name: walking_4
       rect:
         serializedVersion: 2
         x: 251
@@ -260,7 +134,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_14
+      name: walking_5
       rect:
         serializedVersion: 2
         x: 502
@@ -273,7 +147,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_15
+      name: walking_6
       rect:
         serializedVersion: 2
         x: 0
@@ -286,7 +160,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_16
+      name: walking_7
       rect:
         serializedVersion: 2
         x: 251
@@ -299,7 +173,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_17
+      name: walking_8
       rect:
         serializedVersion: 2
         x: 502
@@ -312,7 +186,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_18
+      name: walking_9
       rect:
         serializedVersion: 2
         x: 0
@@ -325,7 +199,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_19
+      name: walking_10
       rect:
         serializedVersion: 2
         x: 251
@@ -338,7 +212,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_20
+      name: walking_11
       rect:
         serializedVersion: 2
         x: 502
@@ -351,7 +225,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_21
+      name: walking_12
       rect:
         serializedVersion: 2
         x: 0
@@ -364,7 +238,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_22
+      name: walking_13
       rect:
         serializedVersion: 2
         x: 251
@@ -377,7 +251,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_23
+      name: walking_14
       rect:
         serializedVersion: 2
         x: 502
@@ -390,7 +264,7 @@ TextureImporter:
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: appearing_24
+      name: walking_15
       rect:
         serializedVersion: 2
         x: 0
