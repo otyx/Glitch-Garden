@@ -16,8 +16,8 @@ public class LevelManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		if (autoLoadLevelInterval == 0) {
-			Debug.Log ("LM: Level Auto Load - disabled");
+		if (autoLoadLevelInterval <= 0) {
+			Debug.Log ("LM: Level Auto Load - disabled - use a positive seconds if to be enabled");
 		} else {
 			Invoke ("LoadStartScene", autoLoadLevelInterval);
 		}
