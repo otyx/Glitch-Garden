@@ -24,7 +24,11 @@ public static class Constants {
 	
 	// Animation Constants
 	public const string FOX_JUMP_TRIGGER		= "Jump Trigger";
+	
+	// Is the object attacking?
 	public const string BOOL_IS_ATTACKING		= "isAttacking";
+	// Is the object being attacked?
+	public const string BOOL_IS_ATTACKED		= "isAttacked";
 	
 
 }
