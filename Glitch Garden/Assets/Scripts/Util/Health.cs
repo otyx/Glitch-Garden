@@ -24,6 +24,14 @@ public class Health : MonoBehaviour {
 	
 	public void Die() {
 		Debug.Log(gameObject.name + " is dying!");
+		
+		// if this is an attacker and it dies, we need to stop the attack mode
+		// on the current Target...
+		Attacker attacker = gameObject.GetComponent<Attacker>();
+		if (attacker != null) {
+			attacker.StopAttack();
+		}
+		// Now destroy the game object
 		Destroy(gameObject);
 	}
 }

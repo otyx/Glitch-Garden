@@ -41,12 +41,26 @@ public class Attacker : MonoBehaviour {
 		currentSpeed = speed;
 	}
 	
+	public GameObject getCurrentTarget() {
+		return currentTarget;	
+	}
+	
 	public void Attack(GameObject obj) {
 		currentTarget = obj;
 		animator.SetBool(Constants.BOOL_IS_ATTACKING, true);
 		Animator anim = obj.GetComponent<Animator>();
 		if (anim) {
 			anim.SetBool(Constants.BOOL_IS_ATTACKED, true);
+		}
+	}
+	
+	// if we need to stop attacking, for some reason, trigger that here
+	public void StopAttack() {
+		if (currentTarget) {
+			Animator anim = currentTarget.GetComponent<Animator>();
+			if (anim) {
+				anim.SetBool(Constants.BOOL_IS_ATTACKED, false);
+			}
 		}
 	}
 	
