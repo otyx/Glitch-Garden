@@ -21,6 +21,10 @@ public static class Constants {
 	public const string STAR_TROPHY				= "Star Trophy";
 	public const string CACTUS					= "Cactus";
 	
+	// other GameObjects
+	public const string OBJ_PROJECTILES			= "Projectiles";
+	public const string OBJ_LAUNCHER			= "Launcher";
+	
 	
 	// Animation Constants
 	public const string FOX_JUMP_TRIGGER		= "Jump Trigger";
