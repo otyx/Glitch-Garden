@@ -34,13 +34,14 @@ public class Shooter : MonoBehaviour {
 	}
 
 	private void Launch() {
-		if (timer < timeInterval) {
-			// still in cooldown
-			return;
-		} else {
-			// restart counting
-			timer = 0;
-		}
+//		Commented out to make conformant with solution in course material.
+//		 if (timer < timeInterval) {
+//			// still in cooldown
+//			return;
+//		} else {
+//			// restart counting
+//			timer = 0;
+//		}
 		if (launcher == null) {
 			Debug.LogError("Shooter: Can't Launch with a null Launcher! (Object: " + gameObject.name + ")");
 		}
