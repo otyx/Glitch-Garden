@@ -26,7 +26,6 @@ public class Button : MonoBehaviour {
 	}
 	
 	void OnMouseDown() {
-		print(name + " pressed");
 		if (currentButton) {
 			currentButton.GetComponent<SpriteRenderer>().color = Color.black;
 		}

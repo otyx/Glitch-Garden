@@ -18,7 +18,7 @@ public class Projectile : MonoBehaviour {
 	 
 	// detect a collision with an attacker and deal damage.
 	void OnTriggerEnter2D(Collider2D other) {
-		Debug.Log("Hit something: " + other.gameObject.tag);
+		//Debug.Log("Hit something: " + other.gameObject.tag);
 		if (other.gameObject.tag.Equals(Constants.ATTACKER)){
 			Health hlth = other.GetComponent<Health>();
 			hlth.TakeHit(damage);

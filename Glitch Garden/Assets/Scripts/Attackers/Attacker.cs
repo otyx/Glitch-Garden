@@ -4,7 +4,9 @@ using System.Collections;
 [RequireComponent (typeof (Rigidbody2D))]
 
 public class Attacker : MonoBehaviour {
-
+	[Tooltip ("The average number of seconds between spawns of this type")]
+	public float secondsBetweenSpawns;
+	
 	private float currentSpeed;
 	private GameObject currentTarget;
 	private Animator animator;
@@ -26,15 +28,16 @@ public class Attacker : MonoBehaviour {
 		if (health == null) {
 			Debug.Log("Health Component is missing in " + gameObject.name);
 		}
+		
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		transform.Translate (Vector3.left * currentSpeed * Time.deltaTime);
+		gameObject.GetComponent<Rigidbody2D>().transform.position += (Vector3.left * currentSpeed * Time.deltaTime);
 	}
 
 	void OnTriggerEnter2D() {
-		Debug.Log (name + " trigger entered");
+		//Debug.Log (name + " trigger entered");
 	}
 	
 	public void SetSpeed(float speed) {
@@ -70,9 +73,9 @@ public class Attacker : MonoBehaviour {
 			Health h = currentTarget.GetComponent<Health>();
 			if (h) {
 				h.TakeHit(damage);
-				Debug.Log(name	+ " is striking for " + damage + " damage! "
-					+ currentTarget.gameObject.name + " now has health: " 
-					+ h.GetHealth() + " (is dead? " + h.IsDestroyed() + ")");
+				//Debug.Log(name	+ " is striking for " + damage + " damage! "
+				//	+ currentTarget.gameObject.name + " now has health: " 
+				//	+ h.GetHealth() + " (is dead? " + h.IsDestroyed() + ")");
 				if (h.IsDestroyed()) {
 					h.Die();
 					animator.SetBool(Constants.BOOL_IS_ATTACKING, false);

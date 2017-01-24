@@ -15,7 +15,9 @@ public class Shooter : MonoBehaviour {
 	public void Start() {
 		// initialise the Projectiles parent if necessary.
 		if (PROJECTILES == null) {
-			PROJECTILES = GameObject.Find(Constants.OBJ_PROJECTILES);
+			PROJECTILES = new GameObject(Constants.OBJ_PROJECTILES);
+			PROJECTILES.transform.position = Vector3.zero;
+			
 		}
 		
 		// find the launcher object

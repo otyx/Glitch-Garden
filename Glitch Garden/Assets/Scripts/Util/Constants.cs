@@ -26,7 +26,12 @@ public static class Constants {
 	// other GameObjects
 	public const string OBJ_PROJECTILES			= "Projectiles";
 	public const string OBJ_LAUNCHER			= "Launcher";
+	public const string OBJ_DEFENDERS			= "Defenders";
+	public const int	LYR_DEFENDERS			= 8;
+	public const int	LYR_PROJECTILES			= 10;
 	
+	public const string OBJ_ATTACKERS			= "Attackers";
+	public const int	LYR_ATTACKERS			= 9;
 	
 	// Animation Constants
 	public const string FOX_JUMP_TRIGGER		= "Jump Trigger";
