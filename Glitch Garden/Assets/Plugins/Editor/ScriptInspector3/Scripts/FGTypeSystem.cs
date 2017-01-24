@@ -1,5 +1,5 @@
 ﻿/* SCRIPT INSPECTOR 3
- * version 3.0.16, October 2016
+ * version 3.0.17, December 2016
  * Copyright © 2012-2016, Flipbook Games
  * 
  * Unity's legendary editor for C#, UnityScript, Boo, Shaders, and text,
@@ -2844,7 +2844,13 @@ public class TypeParameterDefinition : TypeDefinitionBase
 
 public class ConstructedTypeDefinition : TypeDefinition
 {
-	public readonly TypeDefinition genericTypeDefinition;
+	private TypeDefinition _genericTypeDefinition;
+	public TypeDefinition genericTypeDefinition
+	{
+		get { return _genericTypeDefinition.GetGenericSymbol() as TypeDefinition; }
+		private set { _genericTypeDefinition = value; }
+	}
+	
 	public readonly SymbolReference[] typeArguments;
 
 	public ConstructedTypeDefinition(TypeDefinition definition, SymbolReference[] arguments)
@@ -2869,7 +2875,26 @@ public class ConstructedTypeDefinition : TypeDefinition
 		result.parentSymbol = parentSymbol;
 		return result;
 	}
-	
+
+	public override SymbolDefinition Rebind()
+	{
+		if (parentSymbol == null)
+		{
+			var result = base.Rebind() as TypeDefinitionBase;
+			var asConstructedType = result as ConstructedTypeDefinition;
+			if (asConstructedType == null)
+				return this;
+			asConstructedType = asConstructedType.ConstructType(typeArguments);
+			asConstructedType.genericTypeDefinition = asConstructedType.genericTypeDefinition.Rebind() as TypeDefinition;
+			return asConstructedType;
+		}
+		else
+		{
+			genericTypeDefinition = genericTypeDefinition.Rebind() as TypeDefinition;
+			return this;
+		}
+	}
+
 	public override SymbolDefinition TypeOf()
 	{
 		if (kind != SymbolKind.Delegate)
@@ -3336,7 +3361,7 @@ public class ConstructedTypeDefinition : TypeDefinition
 
 public class ConstructedSymbolReference : SymbolDefinition
 {
-	public readonly SymbolDefinition referencedSymbol;
+	public SymbolDefinition referencedSymbol { get; private set; }
 
 	public ConstructedSymbolReference(SymbolDefinition referencedSymbolDefinition)
 	{
@@ -3345,6 +3370,18 @@ public class ConstructedSymbolReference : SymbolDefinition
 		modifiers = referencedSymbol.modifiers;
 		accessLevel = referencedSymbol.accessLevel;
 		name = referencedSymbol.name;
+		//parentSymbol = referencedSymbol.parentSymbol;
+	}
+
+	public override SymbolDefinition Rebind()
+	{
+		referencedSymbol = referencedSymbol.Rebind();
+		return base.Rebind();
+	}
+
+	public override bool IsExtensionMethod
+	{
+		get { return referencedSymbol.IsExtensionMethod; }
 	}
 
 	public override TypeDefinitionBase TypeOfTypeParameter(TypeParameterDefinition tp)
@@ -3402,6 +3439,8 @@ public class ConstructedSymbolReference : SymbolDefinition
 	{
 		if (kind != SymbolKind.MethodGroup)
 			return null;
+		if (referencedSymbol.parentSymbol == null && referencedSymbol.savedParentSymbol != null)
+			referencedSymbol = referencedSymbol.Rebind();
 		var genericMethod = ((MethodGroupDefinition) referencedSymbol).ResolveMethodOverloads(argumentListNode, typeArgs, scope, invokedLeaf);
 		if (genericMethod == null || genericMethod.kind != SymbolKind.Method)
 			return null;
@@ -3594,6 +3633,21 @@ public class TypeDefinition : TypeDefinitionBase
 	
 	public List<TypeParameterDefinition> typeParameters;
 	//public SymbolReference[] tempTypeArguments;
+
+	private bool rebinding;
+	public override SymbolDefinition Rebind()
+	{
+		if (!rebinding && constructedTypes != null && constructedTypes.Count > 0)
+		{
+			rebinding = true;
+			var newCache = new Dictionary<string, ConstructedTypeDefinition>();
+			foreach (var kv in constructedTypes)
+				newCache[kv.Key] = kv.Value.Rebind() as ConstructedTypeDefinition;
+			constructedTypes = newCache;
+			rebinding = false;
+		}
+		return base.Rebind();
+	}
 
 	private Dictionary<string, ConstructedTypeDefinition> constructedTypes;
 	public virtual ConstructedTypeDefinition ConstructType(SymbolReference[] typeArgs)
@@ -4225,6 +4279,11 @@ public class MethodGroupDefinition : SymbolDefinition
 		Scope scope,
 		ParseTree.Leaf invokedLeaf)
 	{
+		if (parentSymbol == null && savedParentSymbol != null)
+			Rebind();
+		if (parentSymbol == null)
+			return null;
+
 		var accessLevelMask = AccessLevelMask.Public;
 		var parentType = parentSymbol as TypeDefinitionBase ?? parentSymbol.parentSymbol as TypeDefinitionBase;
 		var contextType = scope == null ? null : scope.EnclosingType();
@@ -6051,44 +6110,51 @@ public class NamespaceScope : Scope
 		var thisAssembly = GetAssembly();
 		
 		var extensionsMethods = new HashSet<MethodDefinition>();
-		
-		thisAssembly.CollectExtensionMethods(definition, id, typeArgs, memberOf, extensionsMethods, context);
-		if (extensionsMethods.Count > 0)
+
+		var parentNSScope = parentScope as NamespaceScope;
+		var parentNSDef = parentNSScope != null ? parentNSScope.definition : null;
+		for (var nsDef = definition;
+			nsDef != null && nsDef != parentNSDef;
+			nsDef = nsDef.parentSymbol as NamespaceDefinition)
 		{
-			firstAccessibleMethod = extensionsMethods.First();
-
-			SymbolDefinition[] resolvedArguments = null;
-			if (argumentTypes == null)
-				numArguments = MethodGroupDefinition.ProcessArgumentListNode(argumentListNode, out modifiers, out argumentTypes, memberOf, out resolvedArguments);
-			
-			var candidates = new List<MethodDefinition>(extensionsMethods.Count);
-			foreach (var method in extensionsMethods)
-				if (argumentTypes == null || method.CanCallWith(modifiers, true))
-					candidates.Add(method);
-
-			if (typeArgs == null)
+			thisAssembly.CollectExtensionMethods(nsDef, id, typeArgs, memberOf, extensionsMethods, context);
+			if (extensionsMethods.Count > 0)
 			{
-				for (var i = candidates.Count; i --> 0; )
-				{
-					var candidate = candidates[i];
-					if (candidate.NumTypeParameters == 0 || argumentTypes == null)
-						continue;
+				firstAccessibleMethod = extensionsMethods.First();
 
-					candidate = MethodGroupDefinition.InferMethodTypeArguments(candidate, argumentTypes, resolvedArguments, invokedLeaf);
-					if (candidate == null)
-						candidates.RemoveAt(i);
-					else
-						candidates[i] = candidate;
+				SymbolDefinition[] resolvedArguments = null;
+				if (argumentTypes == null)
+					numArguments = MethodGroupDefinition.ProcessArgumentListNode(argumentListNode, out modifiers, out argumentTypes, memberOf, out resolvedArguments);
+
+				var candidates = new List<MethodDefinition>(extensionsMethods.Count);
+				foreach (var method in extensionsMethods)
+					if (argumentTypes == null || method.CanCallWith(modifiers, true))
+						candidates.Add(method);
+
+				if (typeArgs == null)
+				{
+					for (var i = candidates.Count; i-- > 0;)
+					{
+						var candidate = candidates[i];
+						if (candidate.NumTypeParameters == 0 || argumentTypes == null)
+							continue;
+
+						candidate = MethodGroupDefinition.InferMethodTypeArguments(candidate, argumentTypes, resolvedArguments, invokedLeaf);
+						if (candidate == null)
+							candidates.RemoveAt(i);
+						else
+							candidates[i] = candidate;
+					}
 				}
+
+				var resolved = MethodGroupDefinition.ResolveMethodOverloads(numArguments, argumentTypes, resolvedArguments, modifiers, candidates);
+				if (resolved != null && resolved.kind != SymbolKind.Error)
+					return resolved;
 			}
-			
-			var resolved = MethodGroupDefinition.ResolveMethodOverloads(numArguments, argumentTypes, resolvedArguments, modifiers, candidates);
-			if (resolved != null && resolved.kind != SymbolKind.Error)
-				return resolved;
+
+			extensionsMethods.Clear();
 		}
-		
-		extensionsMethods.Clear();
-		
+
 		var importedNamespaces = declaration.importedNamespaces;
 		for (var i = importedNamespaces.Count; i --> 0; )
 		{
@@ -6782,7 +6848,7 @@ public class SymbolDefinition
 		return declarations.Count > 0;
 	}
 	
-	public SymbolDefinition Rebind()
+	public virtual SymbolDefinition Rebind()
 	{
 		if (kind == SymbolKind.Namespace)
 			return Assembly.FindNamespace(FullName);
@@ -6811,17 +6877,41 @@ public class SymbolDefinition
 				}
 				if (mg != null)
 				{
-					var signature = GetGenericSymbol().PrintParameters(GetParameters(), true);
+					var ownParams = GetGenericSymbol().GetParameters();
 					foreach (var m in mg.methods)
 					{
-						var sig = m.PrintParameters(m.GetParameters(), true);
-						if (sig == signature)
+						var otherParams = m.GetParameters();
+						if (ownParams.Count == otherParams.Count)
 						{
-							newSymbol = m;
-							break;
+							var allEqual = true;
+							for (var i = ownParams.Count; i --> 0; )
+							{
+								var own = ownParams[i];
+								var other = otherParams[i];
+								if (own.modifiers != other.modifiers ||
+									own.name != other.name ||
+									own.TypeOf().GetGenericSymbol() != other.TypeOf().GetGenericSymbol())
+								{
+									allEqual = false;
+									break;
+								}
+							}
+							if (allEqual)
+							{
+								newSymbol = m;
+								break;
+							}
 						}
 					}
 				}
+#if SI3_WARNINGS
+				else
+				{
+					Debug.LogWarning(newParent.GetTooltipText() + " not found a MethodGroupDefinition!");
+					return null;
+				}
+#endif
+				
 			}
 #if SI3_WARNINGS
 			if (newSymbol == null)
@@ -7606,9 +7696,8 @@ public class SymbolDefinition
 	
 	protected string DebugValue()
 	{
-		var typeOf = TypeOf() as TypeDefinitionBase;
 		if (//kind == SymbolKind.ConstantField || kind == SymbolKind.LocalConstant ||
-			(kind == SymbolKind.Field || kind == SymbolKind.Property))
+			(kind == SymbolKind.Field || kind == SymbolKind.Property && SISettings.inspectPropertyValues))
 		{
 			if (!(parentSymbol is TypeDefinitionBase))
 				return "";
@@ -7619,6 +7708,8 @@ public class SymbolDefinition
 			
 			if (runtimeType.ContainsGenericParameters)
 				return "";
+			
+			var typeOf = TypeOf() as TypeDefinitionBase;
 			
 			object value;
 			
@@ -7662,6 +7753,8 @@ public class SymbolDefinition
 						return result;
 					try
 					{
+						if (!IsDebuggerBrowsable(fieldInfo as MemberInfo ?? propertyInfo))
+							return result;
 						for (var i = 0; i < Math.Min(allInstances.Length, 10); ++i)
 						{
 							value = fieldInfo != null
@@ -7691,6 +7784,8 @@ public class SymbolDefinition
 				if (fieldInfo == null)
 					return "";
 				try {
+					if (!IsDebuggerBrowsable(fieldInfo))
+						return "";
 					value = fieldInfo.GetValue(null);
 				} catch {
 					return "";
@@ -7702,6 +7797,8 @@ public class SymbolDefinition
 				if (propertyInfo == null)
 					return "";
 				try {
+					if (!IsDebuggerBrowsable(propertyInfo))
+						return "";
 					value = propertyInfo.GetValue(null, null);
 				} catch {
 					return "";
@@ -7714,6 +7811,12 @@ public class SymbolDefinition
 			return DebugPrintValue(typeOf, value, "\n    = ");
 		}
 		return "";
+	}
+	
+	bool IsDebuggerBrowsable(MemberInfo memberInfo)
+	{
+		var dbAttribute = Attribute.GetCustomAttribute(memberInfo, typeof(DebuggerBrowsableAttribute), true) as DebuggerBrowsableAttribute;
+		return dbAttribute == null || dbAttribute.State == DebuggerBrowsableState.Collapsed;
 	}
 	
 	protected string DebugPrintValue(TypeDefinitionBase typeOf, object value, string header)
@@ -8869,9 +8972,18 @@ public class SymbolDefinition
 						}
 
 						var rankNode = node.NodeAt(-1);
-						if (rankNode != null)
+						if (rankNode != null && rankNode.numValidNodes != 0)
 						{
-							typeNodeType = typeNodeType.MakeArrayType(rankNode.numValidNodes - 1);
+							for (var i = 1; i < rankNode.numValidNodes; i += 2)
+							{
+								rank = 1;
+								while (i < rankNode.numValidNodes && rankNode.ChildAt(i).IsLit(","))
+								{
+									++rank;
+									++i;
+								}
+								typeNodeType = typeNodeType.MakeArrayType(rank);
+							}
 						}
 					}
 					return typeNodeType;
@@ -11435,6 +11547,20 @@ public static class FGResolver
 					context.fromInstance = true;
 					
 					enclosingScopeNode.scope.GetCompletionData(d, context);
+				}
+			}
+			
+			if ((completionTypes & ~IdentifierCompletionsType.Member) == IdentifierCompletionsType.TypeName)
+			{
+				var allDefinitions = d;
+				d = new Dictionary<string, SymbolDefinition>();
+				foreach (var kv in allDefinitions)
+				{
+					var kind = kv.Value.kind;
+					if (kv.Value is TypeDefinitionBase || kind == SymbolKind.Namespace)
+					{
+						d[kv.Key] = kv.Value;
+					}
 				}
 			}
 	

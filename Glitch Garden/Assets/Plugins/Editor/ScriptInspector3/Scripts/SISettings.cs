@@ -1,5 +1,5 @@
 ﻿/* SCRIPT INSPECTOR 3
- * version 3.0.16, October 2016
+ * version 3.0.17, December 2016
  * Copyright © 2012-2016, Flipbook Games
  * 
  * Unity's legendary editor for C#, UnityScript, Boo, Shaders, and text,
@@ -132,7 +132,9 @@ public class StringOption : OptionsBase
 public static class SISettings
 {
 	public static IntOption expandTabTitles = Create("ExpandTabTitles", 0);
+	public static BoolOption navToolbarSortByName = Create("NavToolbarSortByName", true);
 	public static BoolOption navToolbarGroupByRegion = Create("NavToolbarGroupByRegion", true);
+	public static BoolOption navToolbarGroupNonMethods = Create("NavToolbarGroupNonMethods", true);
 	public static BoolOption useStandardColorInPopups = Create("UseStdColorsInPopups", false);
 	public static BoolOption showThickerCaret = Create("ShowThickerCaret", false);
 	public static IntOption autoFocusConsole = Create("AutoFocusConsole", 0);
@@ -200,6 +202,8 @@ public static class SISettings
 	
 	public static BoolOption groupFindResultsByFile = Create("GroupFindResultsByFile", true);
 	
+	public static BoolOption inspectPropertyValues = Create("InspectPropertyValues", false);
+	
 	private static System.Type preferencesWindowType;
 	private static System.Type sectionType;
 	private static FieldInfo field_Sections;
@@ -214,7 +218,9 @@ public static class SISettings
 	{
 		var sb = new System.Text.StringBuilder();
 		sb.Append(expandTabTitles.ToJson()); sb.Append(",\n");
+		sb.Append(navToolbarSortByName.ToJson()); sb.Append(",\n");
 		sb.Append(navToolbarGroupByRegion.ToJson()); sb.Append(",\n");
+		sb.Append(navToolbarGroupNonMethods.ToJson()); sb.Append(",\n");
 		sb.Append(useStandardColorInPopups.ToJson()); sb.Append(",\n");
 		sb.Append(showThickerCaret.ToJson()); sb.Append(",\n");
 		sb.Append(autoFocusConsole.ToJson()); sb.Append(",\n");
@@ -267,6 +273,7 @@ public static class SISettings
 		sb.Append(magicMethods_insertWithComments.ToJson()); sb.Append(",\n");
 		sb.Append(magicMethods_openingBraceOnSameLine.ToJson()); sb.Append(",\n");
 		sb.Append(groupFindResultsByFile.ToJson());
+		sb.Append(inspectPropertyValues.ToJson());
 		
 		EditorGUIUtility.systemCopyBuffer = sb.ToString();
 	}
@@ -470,13 +477,23 @@ public static class SISettings
 		
 		labelWidth = 250f;
 		
+		GUILayout.Label("C# Code Navigation Toolbar", EditorStyles.boldLabel, noLayoutOptions);
+		Draw("Order Symbols by Name", navToolbarSortByName);
+		Draw("Group Symbols by #region", navToolbarGroupByRegion);
+		//Draw("Group Non-Method Members", navToolbarGroupNonMethods);
+		EditorGUILayout.Space();
+		
 		GUILayout.Label("C# Code", EditorStyles.boldLabel, noLayoutOptions);
 		//Draw("Semantic Highlighting", semanticHighlighting);
-		Draw("Group Symbols by #region in Nav. Bar", navToolbarGroupByRegion);
 		Draw("Use Neutral Colors in Popups", useStandardColorInPopups);
 		Draw("Reference Highlighting", referenceHighlighting);
 		Draw(".  Keep Last Highlighted Symbol", keepLastHighlight, referenceHighlighting);
 		Draw(".  Highlight Writes in Red", highlightWritesInRed, referenceHighlighting);
+		Draw("Inspect Values of Properties", inspectPropertyValues);
+		EditorGUILayout.HelpBox("Inspecting values of properties requires executing their getters code.\n\n" +
+			"Only enable if executing that may not have some unwanted side-effects!\n\n" +
+			"Alternatively disable inspecting values only on properties with side-effects by decorating them with DebuggerBrowsableAttribute",
+			inspectPropertyValues ? MessageType.Warning : MessageType.Info, true);
 		
 		EditorGUILayout.Space();
 		EditorGUILayout.EndScrollView();

@@ -1,5 +1,5 @@
 ﻿/* SCRIPT INSPECTOR 3
- * version 3.0.16, October 2016
+ * version 3.0.17, December 2016
  * Copyright © 2012-2016, Flipbook Games
  * 
  * Unity's legendary editor for C#, UnityScript, Boo, Shaders, and text,
@@ -186,7 +186,8 @@ public class FGCodeWindow : EditorWindow
 			viewType = editorAssembly.GetType("UnityEditor.View");
 			dockAreaType = editorAssembly.GetType("UnityEditor.DockArea");
 			splitViewType = editorAssembly.GetType("UnityEditor.SplitView");
-			mainWindowType = editorAssembly.GetType("UnityEditor.MainWindow");
+			mainWindowType = editorAssembly.GetType("UnityEditor.MainWindow")
+				?? editorAssembly.GetType("UnityEditor.MainView");
 			windowLayoutType = editorAssembly.GetType("UnityEditor.WindowLayout");
 			
 			parentField = typeof(EditorWindow).GetField("m_Parent", instanceMember);
@@ -200,7 +201,8 @@ public class FGCodeWindow : EditorWindow
 			if (containerWindowType != null)
 			{
 				windowsField = containerWindowType.GetProperty("windows", staticMember);
-				mainViewField = containerWindowType.GetProperty("mainView", instanceMember);
+				mainViewField = containerWindowType.GetProperty("mainView", instanceMember)
+					?? containerWindowType.GetProperty("rootView", instanceMember);
 			}
 			if (viewType != null)
 				allChildrenField = viewType.GetProperty("allChildren", instanceMember);
@@ -542,7 +544,8 @@ public class FGCodeWindow : EditorWindow
 			}
 		}
 		
-		FGCodeWindow newWindow = OpenNewWindow(target, null, true);
+		var recentTab = GetMostRecentlyActive(guid);
+		FGCodeWindow newWindow = OpenNewWindow(target, recentTab, true);
 		if (newWindow != null)
 		{
 			if (characterIndex < 0)
@@ -650,9 +653,23 @@ public class FGCodeWindow : EditorWindow
 		System.Array windows = API.windowsField.GetValue(null, null) as System.Array;
 		if (windows == null)
 			return false;
+		
+		object nextToView = null;
+		object defaultView = null;
+		object siView = null;
 
+		if (nextTo != null && API.parentField != null)
+		{
+			var parent = API.parentField.GetValue(nextTo);
+			if (parent != null && parent.GetType() == API.dockAreaType)
+				nextToView = parent;
+		}
+		
 		foreach (var window in windows)
 		{
+			if (nextToView != null)
+				break;
+
 			var mainView = API.mainViewField.GetValue(window, null);
 			var allChildren = API.allChildrenField.GetValue(mainView, null) as System.Array;
 			if (allChildren == null)
@@ -667,20 +684,31 @@ public class FGCodeWindow : EditorWindow
 				if (panes == null)
 					continue;
 
-				if (nextTo != null ? panes.Contains(nextTo) : panes.Find(pane =>
-					defaultDockNextTo != null ? pane.GetType().ToString() == defaultDockNextTo : pane is FGCodeWindow))
+				if (nextTo != null && panes.Contains(nextTo))
 				{
-					API.addTabMethod.Invoke(view, new object[] { dockThis });
-					return true;
+					nextToView = view;
+					break;
+				}
+				if (defaultView == null && defaultDockNextTo != null)
+				{
+					if (panes.Any(pane => pane.GetType().ToString() == defaultDockNextTo))
+						defaultView = view;
+					if (panes.Any(pane => pane is FGCodeWindow))
+						siView = view;
+				}
+				if (siView == null && panes.Any(pane => pane is FGCodeWindow))
+				{
+					siView = view;
 				}
 			}
 		}
-		if (defaultDockNextTo != null)
-		{
-			defaultDockNextTo = null;
-			return DockNextTo(dockThis, nextTo);
-		}
-		return false;
+		
+		var addToView = nextToView ?? siView ?? defaultView;
+		if (addToView == null)
+			return false;
+		
+		API.addTabMethod.Invoke(addToView, new object[] { dockThis });
+		return true;
 	}
 	
 	private List<EditorWindow> GetTabsInDockArea()
@@ -815,7 +843,9 @@ public class FGCodeWindow : EditorWindow
 		
 		if (targetAsset == null && !string.IsNullOrEmpty(targetAssetGuid))
 		{
-			Close();
+			codeWindows.Remove(this);
+			try { Close(); } catch {}
+			DestroyImmediate(this);
 		}
 		else
 		{
@@ -856,6 +886,7 @@ public class FGCodeWindow : EditorWindow
 		}
 		else
 		{
+			codeWindows.Remove(this);
 			Close();
 		}
 		
@@ -906,14 +937,31 @@ public class FGCodeWindow : EditorWindow
 				textEditor.PingText(textEditor.caretPosition, setSelectionLengthWhenLoaded, FGTextEditor.yellowPingColor);
 		}
 	}
-
+	
+	private EditorWindow tabToFocusOnUpdate = null;
+	
+	private void FocusNextTabOnUpdate()
+	{
+		EditorApplication.update -= FocusNextTabOnUpdate;
+		
+		if (tabToFocusOnUpdate)
+		{
+			tabToFocusOnUpdate.Focus();
+			tabToFocusOnUpdate = null;
+		}
+	}
+	
 	private void OnDestroy()
 	{
 		EditorApplication.update -= InitOnLoad;
 		EditorApplication.update -= OnFirstUpdate;
 		EditorApplication.update -= PingLineWhenLoaded;
 		
-		defaultDockNextTo = null;
+		if (tabToFocusOnUpdate == this)
+		{
+			EditorApplication.update -= FocusNextTabOnUpdate;
+			tabToFocusOnUpdate = null;
+		}
 		
 		FGCodeWindow focusTab = null;
 		var otherTabs = GetTabsInDockArea();
@@ -923,7 +971,7 @@ public class FGCodeWindow : EditorWindow
 			for (var i = otherTabs.Count; i --> 0 && historyIndex != 0; )
 			{
 				var tab = otherTabs[i] as FGCodeWindow;
-				if (tab != null)
+				if (tab != null && tab != this)
 				{
 					var index = guidHistory.IndexOf(tab.targetAssetGuid);
 					if (index >= 0 && index < historyIndex)
@@ -939,8 +987,9 @@ public class FGCodeWindow : EditorWindow
 			}
 			if (focusTab != null)
 			{
-				focusTab.Focus();
-				defaultDockNextTo = null;
+				tabToFocusOnUpdate = focusTab;
+				EditorApplication.update -= FocusNextTabOnUpdate;
+				EditorApplication.update += FocusNextTabOnUpdate;
 			}
 		}
 	}
@@ -967,15 +1016,28 @@ public class FGCodeWindow : EditorWindow
 		for (int i = 0; i < guidHistory.Count; ++i)
 		{
 			var guid = guidHistory[i];
-			foreach (FGCodeWindow wnd in codeWindows)
+			foreach (var wnd in codeWindows)
 				if (wnd && wnd.targetAssetGuid == guid)
 				{
-					if (result.IndexOf(guid) == -1)
+					if (!result.Contains(guid))
 						result.Add(guid);
 					break;
 				}
 		}
 		return result;
+	}
+	
+	public static FGCodeWindow GetMostRecentlyActive(string ignoreGuid)
+	{
+		for (int i = 0; i < guidHistory.Count; ++i)
+		{
+			var guid = guidHistory[i];
+			if (guid != ignoreGuid)
+				foreach (var wnd in codeWindows)
+					if (wnd && wnd.targetAssetGuid == guid)
+						return wnd;
+		}
+		return null;
 	}
 	
 	private static void AddMostRecentGuidHistory(string guid)
@@ -1004,7 +1066,17 @@ public class FGCodeWindow : EditorWindow
 		
 		savedParent = API.parentField.GetValue(this) ?? savedParent;
 		
-		AddMostRecentGuidHistory(targetAssetGuid);
+		EditorApplication.update -= AddMostRecentGuidOnUpdate;
+		EditorApplication.update += AddMostRecentGuidOnUpdate;
+	}
+	
+	private static void AddMostRecentGuidOnUpdate()
+	{
+		EditorApplication.update -= AddMostRecentGuidOnUpdate;
+		
+		var focusedCodeWindow = focusedWindow as FGCodeWindow;
+		if (focusedCodeWindow != null && !string.IsNullOrEmpty(focusedCodeWindow.targetAssetGuid))
+			AddMostRecentGuidHistory(focusedCodeWindow.targetAssetGuid);
 	}
 	
 	private static void SaveGuidHistory()
@@ -1110,7 +1182,10 @@ public class FGCodeWindow : EditorWindow
 					{
 						Event.current.Use();
 						if (!IsMaximized())
+						{
+							codeWindows.Remove(this);
 							Close();
+						}
 					}
 				}
 				else if (isOSX && !Event.current.alt && EditorGUI.actionKey)
@@ -1120,7 +1195,10 @@ public class FGCodeWindow : EditorWindow
 					{
 						Event.current.Use();
 						if (!IsMaximized())
+						{
+							codeWindows.Remove(this);
 							Close();
+						}
 					}
 				}
 				else if (!isOSX && !Event.current.alt && Event.current.shift && EditorGUI.actionKey)
@@ -1546,9 +1624,10 @@ public class FGCodeWindow : EditorWindow
 	
 	public void AddItemsToMenu(GenericMenu menu)
 	{
-		if (!string.IsNullOrEmpty(textEditor.targetPath))
+		if (!string.IsNullOrEmpty(targetAssetGuid))
 		{
-			var fileName = System.IO.Path.GetFileName(textEditor.targetPath);
+			var assetPath = AssetDatabase.GUIDToAssetPath(targetAssetGuid);
+			var fileName = System.IO.Path.GetFileName(assetPath);
 #if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_5 || UNITY_4_6 || UNITY_4_7 || UNITY_5_0 || UNITY_5_1 || UNITY_5_2
 			fileName = fileName.Replace('_', '\xFF3F');
 #endif
@@ -1580,11 +1659,12 @@ public class FGCodeWindow : EditorWindow
 			else
 			{
 				menu.AddItem("Close Tab", "%#w", "Close Tab", "%w", false, () => {
+					codeWindows.Remove(this);
 					Close();
 				});
 				menu.AddItem(new GUIContent("Close All SI Tabs"), false, () => {
 					CloseOtherTabs();
-					try { Close(); } catch {}
+					try { codeWindows.Remove(this); Close(); } catch {}
 				});
 				menu.AddItem("Close Other SI Tabs", "", "Close Other SI Tabs", "%#w", false, CloseOtherTabs);
 			}
@@ -1600,7 +1680,7 @@ public class FGCodeWindow : EditorWindow
 		codeWindows.CopyTo(allWindows);
 		foreach (var window in allWindows)
 			if (window && window != this)
-				try { window.Close(); } catch {}
+				try { codeWindows.Remove(window); window.Close(); } catch {}
 	}
 	
 	private bool IsFloating()
@@ -1670,10 +1750,10 @@ public class FGCodeWindow : EditorWindow
 	{
 		var path = System.IO.Directory.GetCurrentDirectory() + "/Library/Si3Layout.temp";
 		var oldHistory = guidHistory.ToArray();
-		var focusGuid = oldHistory.Length > 0 ? oldHistory[0] : null;
+		var mostRecentIndex = int.MaxValue;
 		
 		var rc = defaultPosition;
-		
+
 		if (System.IO.File.Exists(path))
 		{
 			rc.y -= 5f;
@@ -1693,21 +1773,26 @@ public class FGCodeWindow : EditorWindow
 				return;
 			}
 			
+			var firstTab = true;
 			foreach (var window in allWindows)
 			{
 				var codeWindow = (FGCodeWindow) window;
-				//codeWindow.position = rc;
-				if (!lastShown || !codeWindow.TryDockNextToSimilarTab(lastShown))
+					
+				if (firstTab || !codeWindow.TryDockNextToSimilarTab(lastShown))
 				{
-					//	codeWindow.minSize = codeWindow.minSize;
-					codeWindow.Show();
+					codeWindow.Show(true);
 					codeWindow.position = rc;
 					codeWindow.Focus();
 					codeWindow.Repaint();
 					lastShown = codeWindow;
+					firstTab = false;
 				}
-				if (codeWindow.targetAssetGuid == focusGuid)
+				var index = System.Array.IndexOf(oldHistory, codeWindow.targetAssetGuid);
+				if (index >= 0 && index < mostRecentIndex)
+				{
+					mostRecentIndex = index;
 					setFocusOn = codeWindow;
+				}
 			}
 			
 			if (setFocusOn)
@@ -1739,7 +1824,11 @@ public class FGCodeWindow : EditorWindow
 			for (var i = toggleSi3Tabs.Length; i --> 0; )
 			{
 				var tab = toggleSi3Tabs[i];
-				tab.Close();
+				if (tab)
+				{
+					codeWindows.Remove(tab);
+					tab.Close();
+				}
 			}
 			
 //#if UNITY_EDITOR_OSX

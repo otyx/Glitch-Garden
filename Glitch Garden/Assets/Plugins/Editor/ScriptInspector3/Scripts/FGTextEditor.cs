@@ -1,5 +1,5 @@
 ﻿/* SCRIPT INSPECTOR 3
- * version 3.0.16, October 2016
+ * version 3.0.17, December 2016
  * Copyright © 2012-2016, Flipbook Games
  * 
  * Unity's legendary editor for C#, UnityScript, Boo, Shaders, and text,
@@ -2174,7 +2174,7 @@ public class FGTextEditor
 		}
 		else if (tokenTooltip == null && (hasCodeViewFocus || hasSearchBoxFocus))
 		{
-			if (mouseHoverToken != null && mouseHoverTime != 0 && time - mouseHoverTime > 0.25f)
+			if (mouseHoverToken != null && mouseHoverTime != 0.0f && time - mouseHoverTime > 0.25f)
 			{
 				if (mouseHoverToken.parent != null && EditorWindow.mouseOverWindow == OwnerWindow)
 				{
@@ -2777,7 +2777,7 @@ public class FGTextEditor
 		// on mouse up. Detection is done by comparing hotControl with the next available
 		// controlID - 2, which is super-hacky, but so far I haven't found any nicer way
 		// of doing this.
-		int nextControlID = GUIUtility.GetControlID(buttonHash, FocusType.Native, new Rect());
+		int nextControlID = GUIUtility.GetControlID(buttonHash, FocusType.Passive, new Rect());
 		if (GUIUtility.hotControl != 0)
 		{
 			//Debug.Log("hotControl: " + GUIUtility.hotControl + "  nextControlID: " + nextControlID + "  Event: " + Event.current);
@@ -3354,8 +3354,9 @@ public class FGTextEditor
 			bool isOSX = Application.platform == RuntimePlatform.OSXEditor;
 			bool contextClick = Event.current.type == EventType.ContextClick
 				|| isOSX && Event.current.type == EventType.MouseUp && Event.current.button == 1;
-			contextClick |= Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Menu;
-			if (contextClick && scrollViewRect.Contains(Event.current.mousePosition))
+			bool contextKeyDown = Event.current.type == EventType.KeyDown &&
+				(Event.current.keyCode == KeyCode.Menu || Event.current.Equals(Event.KeyboardEvent("#f10")));
+			if (contextKeyDown || contextClick && scrollViewRect.Contains(Event.current.mousePosition))
 			{
 				Event.current.Use();
 				var codeViewPopupMenu = new GenericMenu();
@@ -3451,7 +3452,7 @@ public class FGTextEditor
 									|| assembly.assemblyId == AssemblyDefinition.UnityAssembly.CSharpEditor)
 								{
 									var declarations = GetSymbolDeclarations();
-									symbol = symbol.Rebind();
+									symbol = symbol.Rebind() ?? symbol;
 									
 									if (declarations != null && declarations.Count == 1)
 									{
@@ -3526,7 +3527,7 @@ public class FGTextEditor
 									//}
 								}
 								
-								var symbolType = symbol.TypeOf() as TypeDefinitionBase;
+								var symbolType =  symbol != null ? symbol.TypeOf() as TypeDefinitionBase : null;
 								if (symbolType != symbol && symbolType != null)
 									AddGoToTypeDefinitionMenuItems(codeViewPopupMenu, symbolType);
 								
@@ -3539,16 +3540,19 @@ public class FGTextEditor
 									selectionStartPosition.line == tokenSpan.EndPosition.line && selectionStartPosition.characterIndex == tokenSpan.EndPosition.index
 									&& caretPosition.line == tokenSpan.StartPosition.line && caretPosition.characterIndex == tokenSpan.StartPosition.index)
 								{
-									addFindInFilesMenuItem = false;
-									
-									codeViewPopupMenu.AddItem(
-										"Find All References", "%#y", "Find All References", "#f12",
-										false,
-										() => FGFindInFiles.FindAllReferences(symbol, targetPath));
+									if (symbol != null)
+									{
+										addFindInFilesMenuItem = false;
+										
+										codeViewPopupMenu.AddItem(
+											"Find All References", "%#y", "Find All References", "#f12",
+											false,
+											() => FGFindInFiles.FindAllReferences(symbol, targetPath));
+									}
 								}
 							}
 							
-							if (symbol.kind == SymbolKind.Method && symbol.GetParameters().Count == 0 && symbol.IsStatic)
+							if (symbol != null && symbol.kind == SymbolKind.Method && symbol.GetParameters().Count == 0 && symbol.IsStatic)
 							{
 								if (addFindInFilesMenuItem)
 								{
@@ -3612,8 +3616,20 @@ public class FGTextEditor
 					"Open at Line " + (caretPosition.line + 1) + "...", "%\n",
 					"Open at Line " + (caretPosition.line + 1) + "...", "%Enter", false,
 					() => EditorWindow.focusedWindow.SendEvent(EditorGUIUtility.CommandEvent("OpenAtCursor")));
-
-				codeViewPopupMenu.ShowAsContext();
+				
+				var tokenAtCursor = GetTokenAtCursor();
+				if (tokenAtCursor != null && tokenAtCursor.tokenKind < SyntaxToken.Kind.Keyword && tokenAtCursor.tokenKind != SyntaxToken.Kind.BuiltInLiteral)
+					tokenAtCursor = null;
+				var rcCaret = tokenAtCursor != null ? GetTokenRect(tokenAtCursor) : GetCaretRect();
+				rcCaret.x += scrollViewRect.x - scrollPosition.x;
+				rcCaret.y += 4f + scrollViewRect.y - scrollPosition.y;
+				if (tokenAtCursor != null)
+				{
+					var ssTopLeft = GUIUtility.ScreenToGUIPoint(new Vector2(rcCaret.x, rcCaret.y));
+					rcCaret.x += ssTopLeft.x - rcCaret.x;
+					rcCaret.y += ssTopLeft.y - rcCaret.y;
+				}
+				codeViewPopupMenu.DropDown(rcCaret);
 				return;
 			}
 
@@ -3685,7 +3701,10 @@ public class FGTextEditor
 #endif
 
 		if (toLine > textBuffer.formatedLines.Length)
+		{
 			toLine = textBuffer.formatedLines.Length;
+			fromLine = Mathf.Max(0, Mathf.Min(fromLine, toLine - (int)(scrollViewRect.height / charSize.y)));
+		}
 
 		List<int> softLineBreaks = null;
 
@@ -4967,6 +4986,24 @@ public class FGTextEditor
 			}
 		}
 		return true;
+	}
+	
+	private Rect GetCaretRect()
+	{
+		Rect result;
+		int row = caretPosition.line, column = caretPosition.characterIndex;
+		if (wordWrapping)
+		{
+			BufferToViewPosition(caretPosition, out row, out column);
+			result = new Rect(charSize.x * column + marginLeft, charSize.y * row + GetLineOffset(caretPosition.line), 1f, charSize.y);
+		}
+		else
+		{
+			column = textBuffer.CharIndexToColumn(column, row);
+			result = new Rect(charSize.x * column + marginLeft, charSize.y * row, 1f, charSize.y);
+		}
+		
+		return result;
 	}
 	
 	private Rect GetTokenRect(SyntaxToken token)
@@ -7346,6 +7383,12 @@ public class FGTextEditor
 		{
 			declarations = new List<SymbolDeclaration>();
 			var asMethodGroup = symbol as MethodGroupDefinition;
+			if (asMethodGroup == null)
+			{
+				var asConstructedSymbolReference = symbol as ConstructedSymbolReference;
+				if (asConstructedSymbolReference != null)
+					asMethodGroup = asConstructedSymbolReference.referencedSymbol as MethodGroupDefinition;
+			}
 			foreach (var method in asMethodGroup.methods)
 			{
 				var methodDeclarations = method.declarations;
@@ -10021,20 +10064,42 @@ public class FGTextEditor
 									}
 								}
 							}
-
-							symbols.Sort((x, y) => {
-								var xName = x.GetName();
-								var yName = y.GetName();
-								if (xName == ".ctor")
-									xName = x.parentSymbol.kind == SymbolKind.MethodGroup ? x.parentSymbol.parentSymbol.GetName() : x.parentSymbol.GetName();
-								else if (x.kind == SymbolKind.Destructor)
-									xName = "~" + x.parentSymbol.GetName();
-								if (yName == ".ctor")
-									yName = y.parentSymbol.kind == SymbolKind.MethodGroup ? y.parentSymbol.parentSymbol.GetName() : y.parentSymbol.GetName();
-								else if (y.kind == SymbolKind.Destructor)
-									yName = "~" + y.parentSymbol.GetName();
-								return xName.CompareTo(yName);
-							});
+							
+							if (SISettings.navToolbarSortByName)
+							{
+								symbols.Sort((x, y) => {
+									var xName = x.GetName();
+									var yName = y.GetName();
+									if (xName == ".ctor")
+										xName = x.parentSymbol.kind == SymbolKind.MethodGroup ? x.parentSymbol.parentSymbol.GetName() : x.parentSymbol.GetName();
+									else if (x.kind == SymbolKind.Destructor)
+										xName = "~" + x.parentSymbol.GetName();
+									if (yName == ".ctor")
+										yName = y.parentSymbol.kind == SymbolKind.MethodGroup ? y.parentSymbol.parentSymbol.GetName() : y.parentSymbol.GetName();
+									else if (y.kind == SymbolKind.Destructor)
+										yName = "~" + y.parentSymbol.GetName();
+									return xName.CompareTo(yName);
+								});
+							}
+							else
+							{
+								symbols.Sort((x, y) => {
+									var xDecl = x.declarations.Find( d => d.IsValid() );
+									var yDecl = y.declarations.Find( d => d.IsValid() );
+									if (xDecl == null)
+										return 1;
+									if (yDecl == null)
+										return -1;
+									var xToken = xDecl.parseTreeNode.GetFirstLeaf().token;
+									var yToken = yDecl.parseTreeNode.GetFirstLeaf().token;
+									var xLine = xToken.Line;
+									var yLine = yToken.Line;
+									return xLine != yLine ? xLine.CompareTo(yLine) :
+										xToken.TokenIndex.CompareTo(yToken.TokenIndex);
+								});
+							}
+							
+							var insertAt = 0;
 							
 							var regionNames = new List<string>(symbols.Count);
 							if (SISettings.navToolbarGroupByRegion)
@@ -10046,26 +10111,21 @@ public class FGTextEditor
 									
 									var target = symbols[s];
 									var decl = target.declarations.FirstOrDefault();
-									var nameNode = decl == null ? null : decl.NameNode();
-									if (nameNode != null)
+									var firstLeaf = decl == null || decl.parseTreeNode == null ? null : decl.parseTreeNode.GetFirstLeaf();
+									if (firstLeaf != null)
 									{
-										var firstLeaf = nameNode.GetFirstLeaf();
-										if (firstLeaf != null)
+										var regionName = firstLeaf.token.formatedLine.GetRegionName();
+										if (!string.IsNullOrEmpty(regionName))
 										{
-											var regionName = firstLeaf.token.formatedLine.GetRegionName();
-											if (!string.IsNullOrEmpty(regionName))
-											{
 #if UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_5 || UNITY_4_6 || UNITY_4_7 || UNITY_5_0 || UNITY_5_1 || UNITY_5_2
-												regionName = regionName.Replace('_', '\xFF3F');
+											regionName = regionName.Replace('_', '\xFF3F');
 #endif
-												regionName = " " + regionName;
-												regionNames[s] = regionName;
-												allRegions.Add(regionName);
-											}
+											regionName = " " + regionName;
+											regionNames[s] = regionName;
+											allRegions.Add(regionName);
 										}
 									}
 								}
-								var insertAt = 0;
 								foreach (var r in from x in allRegions orderby x select x)
 								{
 									var index = regionNames.IndexOf(r);
@@ -10080,6 +10140,38 @@ public class FGTextEditor
 									++insertAt;
 								}
 							}
+							
+							//if (SISettings.navToolbarGroupNonMethods &&
+							//	codePaths[j-1].symbol is TypeDefinitionBase &&
+							//	!codePaths[j-1].symbol.kind == SymbolKind.Enum)
+							//{
+							//	var nestedTypeIndex = -1;
+							//	while ((nestedTypeIndex = members.FindIndex(insertAt, m => m is TypeDefinitionBase)) != -1)
+							//	{
+							//		if (string.IsNullOrEmpty(regionNames[nestedTypeIndex]))
+							//			break;
+									
+							//	}
+							//	var constantIndex = members.FindIndex(m => m.kind == SymbolKind.ConstantField);
+							//	var fieldIndex = members.FindIndex(m => m.kind == SymbolKind.Field);
+							//	var propertyIndex = members.FindIndex(m => m.kind == SymbolKind.Property ||
+							//		m.kind == SymbolKind.Indexer || m.kind == SymbolKind.Event);
+							//	var operatorIndex = members.FindIndex(m => m.kind == SymbolKind.Operator);
+								
+							//	foreach (var r in from x in allRegions orderby x select x)
+							//	{
+							//		var index = regionNames.IndexOf(r);
+									
+							//		var s = symbols[index];
+							//		symbols.RemoveAt(index);
+							//		symbols.Insert(insertAt, s);
+									
+							//		regionNames.RemoveAt(index);
+							//		regionNames.Insert(insertAt, r);
+									
+							//		++insertAt;
+							//	}
+							//}
 							
 							for (var s = 0; s < symbols.Count; s++)
 							{
@@ -10118,6 +10210,7 @@ public class FGTextEditor
 						}
 
 						rc.x -= buttonStyle.overflow.left;
+						rc.width = 1f;
 						menu.DropDown(rc);
 					}
 				}
@@ -10469,7 +10562,7 @@ public class FGTextEditor
 	
 	public bool GoToSymbolDeclaration(SymbolDeclaration declaration)
 	{
-		var node = declaration.NameNode();
+		ParseTree.BaseNode node = declaration.NameNode() ?? declaration.parseTreeNode;
 		if (node == null || !node.HasLeafs())
 			return false;
 
@@ -10506,7 +10599,7 @@ public class FGTextEditor
 		
 		AddRecentLocation(0, true);
 
-		var span = buffer.GetParseTreeNodeSpan(declaration.NameNode());
+		var span = buffer.GetParseTreeNodeSpan(node);
 		if (buffer == textBuffer)
 		{
 			var startAtColumn = CharIndexToColumn(span.index, span.line);

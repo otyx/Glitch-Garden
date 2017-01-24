@@ -1,5 +1,5 @@
 ﻿/* SCRIPT INSPECTOR 3
- * version 3.0.16, October 2016
+ * version 3.0.17, December 2016
  * Copyright © 2012-2016, Flipbook Games
  * 
  * Unity's legendary editor for C#, UnityScript, Boo, Shaders, and text,
@@ -1913,6 +1913,10 @@ public class CsGrammar : FGGrammar
 					cit = IdentifierCompletionsType.ArgumentName;
 					goto breakLoop;
 
+				case "typeOrGeneric":
+					cit = IdentifierCompletionsType.TypeName;
+					goto breakLoop;
+
 				case "typeName":
 					cit &= ~IdentifierCompletionsType.Value;
 					break;
@@ -2482,6 +2486,9 @@ public class CsGrammar : FGGrammar
 					break;
 				case "this":
 					mods |= Modifiers.This;
+					break;
+				case "partial":
+					mods |= Modifiers.Partial;
 					break;
 				default:
 					return mods; // Cancelling...

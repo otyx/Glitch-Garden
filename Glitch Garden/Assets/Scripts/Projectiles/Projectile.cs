@@ -15,5 +15,18 @@ public class Projectile : MonoBehaviour {
 	void Update () {
 		transform.Translate(Vector3.right * speed * Time.deltaTime);
 	}
+	 
+	// detect a collision with an attacker and deal damage.
+	void OnTriggerEnter2D(Collider2D other) {
+		Debug.Log("Hit something: " + other.gameObject.tag);
+		if (other.gameObject.tag.Equals(Constants.ATTACKER)){
+			Health hlth = other.GetComponent<Health>();
+			hlth.TakeHit(damage);
+			if (hlth.IsDestroyed()) {
+				hlth.Die();
+			}
+			Destroy(gameObject);
+		}
+	}
 
 }

@@ -12,10 +12,12 @@ public static class Constants {
 	public const string EFFECTS_AUDIOSRC_NAME	= "Effects";
 	
 	// Enemies
+	public const string ATTACKER				= "attacker";
 	public const string FOX						= "Fox";
 	public const string LIZARD					= "Lizard";
 	
 	// Defenders
+	public const string DEFENDER				= "defender";
 	public const string GRAVESTONE				= "Gravestone";
 	public const string GNOME					= "Gnome";
 	public const string STAR_TROPHY				= "Star Trophy";

@@ -1,5 +1,5 @@
 ﻿/* SCRIPT INSPECTOR 3
- * version 3.0.16, October 2016
+ * version 3.0.17, December 2016
  * Copyright © 2012-2016, Flipbook Games
  * 
  * Unity's legendary editor for C#, UnityScript, Boo, Shaders, and text,
@@ -30,7 +30,7 @@ public class ScriptInspector : Editor
 
 	public static string GetVersionString()
 	{
-		return "3.0.16, October 2016";
+		return "3.0.17, December 2016";
 	}
 
 	public void OnDisable()

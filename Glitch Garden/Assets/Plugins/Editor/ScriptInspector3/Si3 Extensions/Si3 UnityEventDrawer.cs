@@ -1,5 +1,5 @@
 ﻿/* SCRIPT INSPECTOR 3
- * version 3.0.16, October 2016
+ * version 3.0.17, December 2016
  * Copyright © 2012-2016, Flipbook Games
  * 
  * Unity's legendary editor for C#, UnityScript, Boo, Shaders, and text,
@@ -195,6 +195,12 @@ public class Si3UnityEventDrawer : UnityEventDrawer
 			else
 			{
 				targetField = targetObject.GetType().GetField(fieldNames[i], instanceFlags);
+				if (targetField == null)
+				{
+					Debug.LogWarning("Could not find field #" + i + " in type " + targetObject.GetType().FullName + "\n" + string.Join(", ", fieldNames));
+					targetObject = null;
+					break;
+				}
 				targetObject = targetField.GetValue(targetObject);
 			}
 		}

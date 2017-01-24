@@ -1,5 +1,5 @@
 ﻿/* SCRIPT INSPECTOR 3
- * version 3.0.16, October 2016
+ * version 3.0.17, December 2016
  * Copyright © 2012-2016, Flipbook Games
  * 
  * Unity's legendary editor for C#, UnityScript, Boo, Shaders, and text,
@@ -36,6 +36,7 @@ public class FindResultsWindow : EditorWindow
 		VarReference,
 		VarTemplateReference,
 		UnresolvedSymbol,
+		UnresolvedVarSymbol,
 		InactiveCode,
 		Comment,
 		String,
@@ -85,6 +86,7 @@ public class FindResultsWindow : EditorWindow
 		public bool overriddenMethods;
 		public bool vars;
 		public bool typeArgumentsInVars;
+		public bool unresolved;
 		public bool messages;
 		public bool inactiveCode;
 		public bool strings;
@@ -218,6 +220,7 @@ public class FindResultsWindow : EditorWindow
 			overriddenMethods = true,
 			vars = true,
 			typeArgumentsInVars = true,
+			unresolved = true,
 			inactiveCode = true,
 			jsScripts = true,
 			booScripts = true,
@@ -571,6 +574,10 @@ public class FindResultsWindow : EditorWindow
 			return filteringOptions.vars;
 		case ResultType.VarTemplateReference:
 			return filteringOptions.typeArgumentsInVars;
+		case ResultType.UnresolvedSymbol:
+			return filteringOptions.unresolved;
+		case ResultType.UnresolvedVarSymbol:
+			return filteringOptions.unresolved && (filteringOptions.vars || filteringOptions.typeArgumentsInVars);
 		case ResultType.InactiveCode:
 			return filteringOptions.inactiveCode;
 		case ResultType.String:
@@ -608,7 +615,7 @@ public class FindResultsWindow : EditorWindow
 				{
 					resultType = validateResultFunction(r.assetGuid, new TextPosition(r.line, r.characterIndex), r.length, ref referencedSymbol);
 					if (resultType == ResultType.RemoveResult)
-						return;
+						continue;
 				}
 				
 				if (!CheckFiltering(resultType))
@@ -950,6 +957,7 @@ public class FindResultsWindow : EditorWindow
 			var newOverriddenMethods = filteringOptions.overriddenMethods;
 			var newVars = filteringOptions.vars;
 			var newTypeArgsInVars = filteringOptions.typeArgumentsInVars;
+			var newUnresolved = filteringOptions.unresolved;
 			if (referencedSymbol is InstanceDefinition)
 			{
 				newReads = GUILayout.Toggle(filteringOptions.reads, "Read", EditorStyles.toolbarButton, toolbarButtonLayoutOptions);
@@ -973,6 +981,8 @@ public class FindResultsWindow : EditorWindow
 					newTypeArgsInVars = GUILayout.Toggle(filteringOptions.typeArgumentsInVars, "var<T>", EditorStyles.toolbarButton, toolbarButtonLayoutOptions);
 				}
 			}
+			newUnresolved = GUILayout.Toggle(filteringOptions.unresolved, "???", EditorStyles.toolbarButton, toolbarButtonLayoutOptions);
+			
 			var newInactiveCode = GUILayout.Toggle(filteringOptions.inactiveCode, "#if", EditorStyles.toolbarButton, toolbarButtonLayoutOptions);
 			var newStrings = GUILayout.Toggle(filteringOptions.strings, "String", EditorStyles.toolbarButton, toolbarButtonLayoutOptions);
 			var newComments = GUILayout.Toggle(filteringOptions.comments, "Comment", EditorStyles.toolbarButton, toolbarButtonLayoutOptions);
@@ -984,6 +994,7 @@ public class FindResultsWindow : EditorWindow
 				newOverriddenMethods != filteringOptions.overriddenMethods ||
 				newVars != filteringOptions.vars ||
 				newTypeArgsInVars != filteringOptions.typeArgumentsInVars ||
+				newUnresolved != filteringOptions.unresolved ||
 				newInactiveCode != filteringOptions.inactiveCode ||
 				newComments != filteringOptions.comments ||
 				newStrings != filteringOptions.strings)
@@ -995,6 +1006,7 @@ public class FindResultsWindow : EditorWindow
 				filteringOptions.overriddenMethods = newOverriddenMethods;
 				filteringOptions.vars = newVars;
 				filteringOptions.typeArgumentsInVars = newTypeArgsInVars;
+				filteringOptions.unresolved = newUnresolved;
 				filteringOptions.inactiveCode = newInactiveCode;
 				filteringOptions.comments = newComments;
 				filteringOptions.strings = newStrings;

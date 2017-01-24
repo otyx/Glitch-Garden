@@ -1,6 +1,6 @@
 -------------------------------------
 SCRIPT INSPECTOR 3
-version 3.0.16, October 2016
+version 3.0.17, December 2016
 Copyright © 2012-2016, Flipbook Games
 -------------------------------------
 
@@ -19,6 +19,30 @@ Thank you @inventor2010 for being awesome!!! :)
 
 Script Inspector 3 - Version History
 =====================================
+
+New in version 3.0.17:
+- Si3 tabs auto-docking updated for Unity 5.5.0 - thanks @jrDev & @JoeStrout
+- Added autocompletion filtering when only a type is expected - thanks @laurentlavigne
+- Added Shift+F10 as an alternative shortcut to Context Menu key
+- Added option for ordering members in Code Navigation Toolbar by name or in order of appearance - thanks @Thon Lorenz
+- Aligned context menu with the token under caret
+- Added option to disable live inspection of property values - thanks @_Adriaan
+- Added filtering option for unresolved symbols in References window
+- Improved incremental code analysis for generic partial types - thanks @eagleeyez
+- Fixed text flickering on pressing PageDown at end of file
+- Fixed navigation to operator members using Code Navigation Toolbar
+- Fixed grouping by #region of operator members
+- Fixed Context Menu shortcut not always working
+- Fixed a NullRef on context menu - thanks @thienhaflash
+- Fixed excessive width of dropdown menu in Code Navigation Toolbar - thanks @JoeStrout
+- Fixed default position when opening new tabs - thanks @laurentlavigne
+- Fixed context menu on some Si3 tabs titles
+- Fixed restoring focus on toggling floating tabs
+- Fixed NullRef exception on deleting scripts opened in Si3 tabs - thanks @_Adriaan
+- Fixed resolving of extension methods defined in parent namespace
+- Fixed resolving type of jagged array fields - thanks @sngdan
+- Fixed Go to Definition for generic methods
+- Fixed NullRef in Si3 UnityEventDrawer - thanks @thienhaflash
 
 New in version 3.0.16:
 - Applied all @broberson's changes to allow compiling Si3 as a DLL

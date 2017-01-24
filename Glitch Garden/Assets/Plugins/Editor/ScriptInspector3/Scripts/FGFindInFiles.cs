@@ -1,5 +1,5 @@
 ﻿/* SCRIPT INSPECTOR 3
- * version 3.0.16, October 2016
+ * version 3.0.17, December 2016
  * Copyright © 2012-2016, Flipbook Games
  * 
  * Unity's legendary editor for C#, UnityScript, Boo, Shaders, and text,
@@ -126,7 +126,7 @@ public static class FGFindInFiles
 			}
 		}
 		
-		FindResultsWindow resultsWindow = FindResultsWindow.Create(
+		var resultsWindow = FindResultsWindow.Create(
 			"References to " + symbol.FullName,
 			FindAllInSingleFile,
 			candidateGuids,
@@ -240,7 +240,13 @@ public static class FGFindInFiles
 		var formatedLine = buffer.formatedLines[location.line];
 		
 		var textLine = buffer.lines[location.line];
-		var isVarResult = length == 3 && (referencedSymbol is TypeDefinitionBase) && textLine.Substring(location.index, length) == "var";
+		var isVarResult =
+			length == 3 &&
+			referencedSymbol is TypeDefinitionBase &&
+			location.index + 3 < textLine.Length &&
+			textLine[location.index] == 'v' &&
+			textLine[location.index + 1] == 'a' &&
+			textLine[location.index + 2] == 'r';
 		
 		if (isCsScript)
 		{
@@ -279,7 +285,7 @@ public static class FGFindInFiles
 		}
 		
 		if (!isCsScript || token.parent == null)
-			return FindResultsWindow.ResultType.UnresolvedSymbol;
+			return isVarResult ? FindResultsWindow.ResultType.UnresolvedVarSymbol : FindResultsWindow.ResultType.UnresolvedSymbol;
 		
 		var resolvedSymbol = token.parent.resolvedSymbol;
 		if (resolvedSymbol == null || resolvedSymbol.kind == SymbolKind.Error)
@@ -303,12 +309,12 @@ public static class FGFindInFiles
 		
 		resolvedSymbol = token.parent != null ? token.parent.resolvedSymbol : null;
 		if (resolvedSymbol == null || resolvedSymbol.kind == SymbolKind.Error)
-			return FindResultsWindow.ResultType.UnresolvedSymbol;
+			return isVarResult ? FindResultsWindow.ResultType.UnresolvedVarSymbol : FindResultsWindow.ResultType.UnresolvedSymbol;
 		
 		if (resolvedSymbol.kind == SymbolKind.Constructor || resolvedSymbol.kind == SymbolKind.Destructor)
 			resolvedSymbol = resolvedSymbol.parentSymbol;
 		if (resolvedSymbol == null || resolvedSymbol.kind == SymbolKind.Error)
-			return FindResultsWindow.ResultType.UnresolvedSymbol;
+			return isVarResult ? FindResultsWindow.ResultType.UnresolvedVarSymbol : FindResultsWindow.ResultType.UnresolvedSymbol;
 		
 		var constructedSymbol = resolvedSymbol;
 		resolvedSymbol = resolvedSymbol.GetGenericSymbol();
