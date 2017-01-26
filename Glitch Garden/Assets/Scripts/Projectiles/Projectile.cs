@@ -13,7 +13,7 @@ public class Projectile : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		transform.Translate(Vector3.right * speed * Time.deltaTime);
+		GetComponent<Rigidbody2D>().transform.Translate(Vector3.right * speed * Time.deltaTime);
 	}
 	 
 	// detect a collision with an attacker and deal damage.

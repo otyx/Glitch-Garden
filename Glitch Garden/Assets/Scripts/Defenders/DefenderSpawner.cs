@@ -5,10 +5,11 @@ using UnityEngine;
 public class DefenderSpawner : MonoBehaviour {
 	
 	private static GameObject defenderParent;
+	private GameManager manager;
 	
 	// Use this for initialization
 	void Start () {
-		
+		manager = GameObject.FindObjectOfType<GameManager>();	
 	}
 	
 	// Update is called once per frame
@@ -16,11 +17,18 @@ public class DefenderSpawner : MonoBehaviour {
 		
 	}
 	
-	void OnMouseDown() {
-		GameObject obj = Button.getCurrentSelection();
+	void OnMouseUp() {
+		GameObject obj = SelectorPanel.getCurrentSelection();
 		if (obj != null) {
-			Vector2 spawnPt = CalculateMouseClickToWorldPoint();
-			SpawnDefender(obj, spawnPt);	
+			// first can we pay for this object?
+			if (manager.useStars(obj.GetComponent<Defender>().starCost) == GameManager.TRANSACTION_STATUS.SUCCESS) {
+				Vector2 spawnPt = CalculateMouseClickToWorldPoint();
+				SpawnDefender(obj, spawnPt);	
+			} else {
+				Debug.LogWarning("Can't pay for spawn of " + obj.name);
+			}
+			
+			
 		}
 	}
 	

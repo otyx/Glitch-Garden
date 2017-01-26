@@ -4,9 +4,13 @@ using System.Collections;
 public static class Constants {
 
 	// Level constants
-	public const string LVL_SPLASH				= "00 Splash"	;
-	public const string LVL_STARTMENU			= "01a Start"	;
-
+	public const string SCN_SPLASH				= "00 Splash"	;
+	public const string SCN_STARTMENU			= "01a Start"	;
+	public const string SCN_OPTIONS				= "01b Options"	;
+	public const string SCN_LEVEL_PREFIX		= "02 Level_"	;
+	public const string SCN_WIN					= "03a Win"		;
+	public const string SCN_LOSE				= "03b Lose"	;
+	
 	// Audio System
 	public const string MUSIC_AUDIOSRC_NAME		= "Music";
 	public const string EFFECTS_AUDIOSRC_NAME	= "Effects";
@@ -33,6 +37,8 @@ public static class Constants {
 	public const string OBJ_ATTACKERS			= "Attackers";
 	public const int	LYR_ATTACKERS			= 9;
 	
+	public const string	OBJ_SELECTOR_PANEL		= "SelectorPanel";
+	
 	// Animation Constants
 	public const string FOX_JUMP_TRIGGER		= "Jump Trigger";
 	
@@ -41,5 +47,4 @@ public static class Constants {
 	// Is the object being attacked?
 	public const string BOOL_IS_ATTACKED		= "isAttacked";
 	
-
 }

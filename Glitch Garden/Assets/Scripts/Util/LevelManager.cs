@@ -24,7 +24,7 @@ public class LevelManager : MonoBehaviour {
 	}
 
 	public void LoadStartScene() {
-		LoadScene (Constants.LVL_STARTMENU);
+		LoadScene (Constants.SCN_STARTMENU);
 	}
 
 	public void LoadScene(string sceneName) {

@@ -33,7 +33,8 @@ public class Attacker : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		gameObject.GetComponent<Rigidbody2D>().transform.position += (Vector3.left * currentSpeed * Time.deltaTime);
+		//gameObject.GetComponent<Rigidbody2D>().transform.position += (Vector3.left * currentSpeed * Time.deltaTime);
+		gameObject.GetComponent<Rigidbody2D>().transform.Translate(Vector3.left * currentSpeed * Time.deltaTime);
 	}
 
 	void OnTriggerEnter2D() {
@@ -62,7 +63,7 @@ public class Attacker : MonoBehaviour {
 		if (currentTarget) {
 			Animator anim = currentTarget.GetComponent<Animator>();
 			if (anim) {
-				anim.SetBool(Constants.BOOL_IS_ATTACKED, false);
+				anim.SetBool(Constants.BOOL_IS_ATTACKING, false);
 			}
 		}
 	}
@@ -81,6 +82,8 @@ public class Attacker : MonoBehaviour {
 					animator.SetBool(Constants.BOOL_IS_ATTACKING, false);
 				}
 			} // end if h
-		} // end if currenttarget
+		} else {
+			animator.SetBool(Constants.BOOL_IS_ATTACKING, false);
+		}
 	}
 }

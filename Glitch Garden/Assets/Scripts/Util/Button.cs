@@ -4,37 +4,54 @@ using UnityEngine;
 
 public class Button : MonoBehaviour {
 	
-	// the currently active button
-	private static GameObject currentButton;
+	// possible button states
+	public enum BTN_STATE {AVAILABLE, UNAVAILABLE, SELECTED};
+	private BTN_STATE currentState = BTN_STATE.UNAVAILABLE;
 	
-	// the currently active object associated with the active button
-	private static GameObject currentObject;
+	// the selectorpanel managing this button
+	private SelectorPanel selectorPanel;
 	
 	// this prefab associated with this instance of Button which is 
 	// set into the static variable currentObject for retrieval via 
 	// a static method.
 	public GameObject objectForButton;
 	
-	// Use this for initialization
-	void Start () {
-		
+	
+	void Start() {
+		selectorPanel = GameObject.FindObjectOfType<SelectorPanel>();
 	}
 	
-	// Update is called once per frame
-	void Update () {
-		
-	}
-	
+	// pass the message up to the selector panel parent for handling
 	void OnMouseDown() {
-		if (currentButton) {
-			currentButton.GetComponent<SpriteRenderer>().color = Color.black;
-		}
-		gameObject.GetComponent<SpriteRenderer>().color = Color.white;
-		currentButton = gameObject; 
-		currentObject = objectForButton;
+		selectorPanel.HandleButtonMouseDown(this);
 	}
 	
-	public static GameObject getCurrentSelection (){
-		return currentObject;
+	// the cost of the object associated with this button
+	public int getObjectCost() {
+		return objectForButton.GetComponent<Defender>().starCost;
+	}
+	
+	public void setState(Button.BTN_STATE state) {
+		currentState = state;
+		refreshDisplay();
+	}
+	
+	public BTN_STATE getState() {
+		return currentState;
+	}
+	
+	public void refreshDisplay() {
+		switch (currentState) {
+			case BTN_STATE.AVAILABLE:
+				gameObject.GetComponent<SpriteRenderer>().color = Color.white;
+				break;
+			case BTN_STATE.SELECTED:
+				gameObject.GetComponent<SpriteRenderer>().color = Color.yellow;
+				break;
+			case BTN_STATE.UNAVAILABLE:
+			default:
+				gameObject.GetComponent<SpriteRenderer>().color = Color.black;
+				break;
+		}
 	}
 }
