@@ -28,7 +28,11 @@ public class LevelManager : MonoBehaviour {
 	}
 
 	public void LoadScene(string sceneName) {
-		SceneManager.LoadScene (sceneName);
+		if (Application.CanStreamedLevelBeLoaded(sceneName)) {
+			SceneManager.LoadScene(sceneName);	
+		} else {
+			Debug.LogError("LM: Unable to load scene: " + sceneName);
+		}
 	}
 
 	public void Quit() {
