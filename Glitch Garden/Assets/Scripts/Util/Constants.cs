@@ -11,10 +11,15 @@ public static class Constants {
 	public const string SCN_WIN					= "03a Win"		;
 	public const string SCN_LOSE				= "03b Lose"	;
 	
+	// Tag constants
+	public const string TAG_WINTEXT				= "WinMessage";
+	public const string TAG_LOSETEXT			= "LoseMessage";
+	
 	// Audio System
 	public const string MUSIC_AUDIOSRC_NAME		= "Music";
 	public const string EFFECTS_AUDIOSRC_NAME	= "Effects";
 	
+	public const int EFFECT_WIN					= 0;
 	// Enemies
 	public const string ATTACKER				= "attacker";
 	public const string FOX						= "Fox";
@@ -47,4 +52,6 @@ public static class Constants {
 	// Is the object being attacked?
 	public const string BOOL_IS_ATTACKED		= "isAttacked";
 	
+	// Level states
+	public enum LEVEL_STATE {WIN, LOSE, PLAYING};
 }

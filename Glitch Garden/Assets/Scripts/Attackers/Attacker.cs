@@ -33,6 +33,8 @@ public class Attacker : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		if (GameManager.isPaused) return;
+		
 		//gameObject.GetComponent<Rigidbody2D>().transform.position += (Vector3.left * currentSpeed * Time.deltaTime);
 		gameObject.GetComponent<Rigidbody2D>().transform.Translate(Vector3.left * currentSpeed * Time.deltaTime);
 	}

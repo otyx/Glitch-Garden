@@ -6,6 +6,7 @@ public class GameManager : MonoBehaviour {
 	
 	public enum TRANSACTION_STATUS {SUCCESS, FAILURE};
 	
+	public static bool isPaused = false;
 	// starting balance of star counts
 	public static int starCount = 300;
 	

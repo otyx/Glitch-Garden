@@ -46,7 +46,7 @@ public class Button : MonoBehaviour {
 				gameObject.GetComponent<SpriteRenderer>().color = Color.white;
 				break;
 			case BTN_STATE.SELECTED:
-				gameObject.GetComponent<SpriteRenderer>().color = Color.yellow;
+				gameObject.GetComponent<SpriteRenderer>().color = Color.green;
 				break;
 			case BTN_STATE.UNAVAILABLE:
 			default:

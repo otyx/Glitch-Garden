@@ -4,9 +4,15 @@ using UnityEngine.SceneManagement;
 
 public class MusicPlayer : MonoBehaviour {
 
+	
 	// the Music library
+	[Tooltip ("Add the music clips in order of build index starting with the splash screen")]
 	public AudioClip[] musicLibrary;
-
+	
+	// the Sound Effect library
+	[Tooltip ("Add the clips in order of WIN, LOSE")]
+	public AudioClip[] effectLibrary;
+	
 	// the music Audio source
 	private AudioSource musicSource;
 	private AudioSource effectsSource;
@@ -25,14 +31,15 @@ public class MusicPlayer : MonoBehaviour {
 				effectsSource = src;
 			}
 		}
-
+		
 		// Register the music player as a delegate for the scenemanager
 		SceneManager.sceneLoaded += OnSceneLoad;
 
 		// play the splash screen sound - with the defalt volume
 		PlayMusicClip (musicLibrary[0], false);
 	}
-
+	
+	// Scene Management delegate code
 	void OnSceneLoad(Scene scene, LoadSceneMode mode) {
 		PlayMusicClip (musicLibrary[scene.buildIndex], true, PlayerPrefsManager.GetMasterVolume());
 	}
@@ -40,16 +47,29 @@ public class MusicPlayer : MonoBehaviour {
 	public void PlayMusicClip(AudioClip clip, bool looping = false, float volume = 0.25f) {
 		if (clip) {
 			if (clip != musicSource.clip) {
-				musicSource.clip = clip;
-				musicSource.loop = looping;
-				musicSource.volume = volume;
-				musicSource.Play ();
+				PlayClip(clip, musicSource, looping, volume);
 			}
 		} else {
 			Debug.LogError ("MP: PlayMusicClip called with null clip. Current scene: " + SceneManager.GetActiveScene().name);
 		}
 	}
-
+	
+	public void PlayEffectClip(AudioClip clip, bool looping = false, float volume = 0.5f) {
+		Debug.Log("Player: playing clip: " + clip.name);
+		if (clip) {
+			PlayClip(clip, effectsSource, looping, volume);
+		} else {
+			Debug.LogError ("MP: PlayEffectClip called with null clip. Current scene: " + SceneManager.GetActiveScene().name);
+		}
+	}
+	
+	private void PlayClip(AudioClip clip, AudioSource src, bool looping = false, float volume = 0.25f) {
+		src.clip = clip;
+		src.loop = looping;
+		src.volume = volume;
+		src.PlayOneShot(clip); 
+	}
+	
 	// Volumecontrol
 	public void SetVolume(string src, float volume) {
 		if (src.Equals(Constants.MUSIC_AUDIOSRC_NAME)) {
@@ -58,5 +78,4 @@ public class MusicPlayer : MonoBehaviour {
 			effectsSource.volume = volume;
 		}
 	}
-	// Scene Management delegate code
 }
